@@ -44,7 +44,7 @@ namespace lab3
     }
     class Program
     {
-        static int x = 0, b = 1, a = 0, potoks = 15, odd = 0, even = 0, obsh = 0, threads = 5;
+        static int x = 0, b = 1, a = 0, potoks = 15, odd = 0, even = 0, obsh = 0, threads = 5, firstpar = 2, secondpar = 3;
         static object locker = new object();
         static Mutex mutexObj = new Mutex();
         static Mutex mutexObj2 = new Mutex();
@@ -54,7 +54,6 @@ namespace lab3
 
         static void Main(string[] args)
         {
-
             //Count0();
             //Count3();
             Count2();
@@ -63,40 +62,42 @@ namespace lab3
 
         private static void Count2()
         {
-            int
-            obsh = 50;
-            for (int i = 0; i < obsh; i++)
-            {
-                while (threads < 0)
+                for (int i = 0; i < threads; i++)
                 {
-
+                    Thread myThread = new Thread(Runmutex);
+                    myThread.Start();
                 }
-                Thread myThread = new Thread(new ParameterizedThreadStart(Runmutex));
-                myThread.Start(i);
-                threads--;
-            }
-
         }
 
-        private static void Runmutex(object x)
+        private static void Runmutex()
         {
             mutexObj2.WaitOne();
-            int n = (int)x;
-            if ((obsh - even - odd) % 2 == 0)
+            switch (firstpar * secondpar)// 2 * 3
             {
-                odd++;
-                threads++;
-                mutexObj2.ReleaseMutex();
-                Console.WriteLine(odd);
+                case 6:
+                    firstpar += 1;
+                    Console.WriteLine(firstpar * secondpar); // 3 * 3
+                    mutexObj2.ReleaseMutex();
+                    Thread.Sleep(100);
+                    return;
+                case 9:
+                    secondpar -= 2;
+                    Console.WriteLine(firstpar * secondpar); // 3 * 1
+                    mutexObj2.ReleaseMutex();
+                    Thread.Sleep(500);                    
+                    return;
+                case 3:
+                    firstpar += 3;
+                    Console.WriteLine(firstpar * secondpar); // 6 * 1
+                    mutexObj2.ReleaseMutex();
+                    Thread.Sleep(1000);                    
+                    return;
+                default:
+                    firstpar = 2;
+                    secondpar = 3;
+                    break;
             }
-            else
-            {
-                even++;
-                Thread.Sleep(500);
-                threads++;
-                mutexObj2.ReleaseMutex();
-                Console.WriteLine(even);
-            }
+            mutexObj2.ReleaseMutex();
             Console.WriteLine("Complete");
         }
         private static void Count0()
