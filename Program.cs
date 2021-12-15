@@ -9,14 +9,14 @@ namespace lab3
     {
         public Thread Thrd;
         ManualResetEvent mre;
-        Person per;
+        Animal ani;
 
-        public MyThread(string name, ManualResetEvent evt, Person pers)
+        public MyThread(string name, ManualResetEvent evt, Animal anim)
         {
             Thrd = new Thread(Run);
             Thrd.Name = name;
             mre = evt;
-            per = pers;
+            ani = anim;
             Thrd.Start();
         }
 
@@ -26,8 +26,8 @@ namespace lab3
 
             for (int i = 0; i < 5; i++)
             {
-                Console.WriteLine(per.Name + " " + per.age);
-                per.age++;
+                Console.WriteLine(ani.Name + " " + ani.age);
+                ani.age++;
                 Thread.Sleep(500);
             }
 
@@ -37,69 +37,160 @@ namespace lab3
         }
     }
 
-    class Person
+    class Animal
     {
         public string Name { get; set; }
         public int age { get; set; }
     }
+
+    class SharedRes
+    {
+
+        public static int Count = 0;
+
+        public static Mutex Mtx = new Mutex();
+
+    }
+
+    // В этом потоке переменная SharedRes.Count инкрементируется,
+
+    class IncThread
+    {
+
+        int num;
+
+        public Thread Thrd;
+
+        public IncThread(string name, int n)
+        {
+
+            Thrd = new Thread(Run);
+
+            num = n;
+
+            Thrd.Name = name;
+
+            Thrd.Start();
+
+        }
+
+        // Точка входа в поток,
+
+        void Run()
+        {
+
+            Console.WriteLine(Thrd.Name + " ожидает мьютекс.");
+
+            // Получить мьютекс.
+
+            SharedRes.Mtx.WaitOne();
+
+            Console.WriteLine(Thrd.Name + " получает мьютекс.");
+
+            do
+            {
+
+                Thread.Sleep(500);
+
+                SharedRes.Count++;
+
+                Console.WriteLine("В потоке " + Thrd.Name + ", SharedRes.Count = " + SharedRes.Count);
+
+                num--;
+
+            } while (num > 0);
+
+            Console.WriteLine(Thrd.Name + " освобождает мьютекс.");
+
+            // Освободить мьютекс.
+
+            SharedRes.Mtx.ReleaseMutex();
+
+        }
+
+    }
+
+    // В этом потоке переменная SharedRes.Count декрементируется,
+
+    class DecThread
+    {
+
+        int num;
+
+        public Thread Thrd;
+
+        public DecThread(string name, int n)
+        {
+
+            Thrd = new Thread(new ThreadStart(this.Run));
+
+            num = n;
+
+            Thrd.Name = name;
+
+            Thrd.Start();
+
+        }
+
+        // Точка входа в поток,
+
+        void Run()
+        {
+
+            Console.WriteLine(Thrd.Name + " ожидает мьютекс.");
+
+            // Получить мьютекс.
+
+            SharedRes.Mtx.WaitOne();
+
+            Console.WriteLine(Thrd.Name + " получает мьютекс.");
+
+            do
+            {
+
+                Thread.Sleep(500);
+
+                SharedRes.Count--;
+
+                Console.WriteLine("В потоке " + Thrd.Name + ", SharedRes.Count = " + SharedRes.Count);
+
+                num--;
+
+            } while (num > 0);
+
+            Console.WriteLine(Thrd.Name + " освобождает мьютекс.");
+
+            // Освободить мьютекс.
+
+            SharedRes.Mtx.ReleaseMutex();
+
+        }
+    }
     class Program
     {
-        static int x = 0, b = 1, a = 0, potoks = 15, odd = 0, even = 0, obsh = 0, threads = 5, firstpar = 2, secondpar = 3;
+        static int x = 0;
         static object locker = new object();
-        static Mutex mutexObj = new Mutex();
-        static Mutex mutexObj2 = new Mutex();
-        static string s = "";
         public static bool vivedeno = true;
 
 
         static void Main(string[] args)
         {
             //Count0();
-            //Count3();
             Count2();
+            //Count3();
             Console.ReadLine();
         }
 
         private static void Count2()
         {
-                for (int i = 0; i < threads; i++)
-                {
-                    Thread myThread = new Thread(Runmutex);
-                    myThread.Start();
-                }
+            IncThread mt1 = new IncThread("Инкрементирующий Поток", 5);
+            Thread.Sleep(1); // разрешить инкрементирующему потоку начаться
+            DecThread mt2 = new DecThread("Декрементирующий Поток", 5);
+            mt1.Thrd.Join();
+            mt2.Thrd.Join();
+            Console.ReadLine();
         }
 
-        private static void Runmutex()
-        {
-            mutexObj2.WaitOne();
-            switch (firstpar * secondpar)// 2 * 3
-            {
-                case 6:
-                    firstpar += 1;
-                    Console.WriteLine(firstpar * secondpar); // 3 * 3
-                    mutexObj2.ReleaseMutex();
-                    Thread.Sleep(100);
-                    return;
-                case 9:
-                    secondpar -= 2;
-                    Console.WriteLine(firstpar * secondpar); // 3 * 1
-                    mutexObj2.ReleaseMutex();
-                    Thread.Sleep(500);                    
-                    return;
-                case 3:
-                    firstpar += 3;
-                    Console.WriteLine(firstpar * secondpar); // 6 * 1
-                    mutexObj2.ReleaseMutex();
-                    Thread.Sleep(1000);                    
-                    return;
-                default:
-                    firstpar = 2;
-                    secondpar = 3;
-                    break;
-            }
-            mutexObj2.ReleaseMutex();
-            Console.WriteLine("Complete");
-        }
         private static void Count0()
         {
             for (int i = 0; i < 5; i++)
@@ -126,10 +217,10 @@ namespace lab3
         }
         public static void Count3()
         {
-            var oleg = new Person() { Name = "Oleg", age = 15 };
+            var tiger = new Animal() { Name = "Tiger", age = 15 };
             ManualResetEvent evtObj = new ManualResetEvent(false);
 
-            MyThread mt1 = new MyThread("Событийный поток 1", evtObj, oleg);
+            MyThread mt1 = new MyThread("Событийный поток 1", evtObj, tiger);
 
             Console.WriteLine("Основной поток ожидает событие");
 
@@ -139,7 +230,7 @@ namespace lab3
 
             evtObj.Reset();
 
-            mt1 = new MyThread("Событийный поток 2", evtObj, oleg);
+            mt1 = new MyThread("Событийный поток 2", evtObj, tiger);
 
             evtObj.WaitOne();
 
